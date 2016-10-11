@@ -7,16 +7,17 @@ url = raw_input('Enter Chiasenhac album url : ')
 saveDir = raw_input('Enter Save Folder : ')
 
 def GetDownloadLinks(urlList) :
-	temp = []
+	# temp = []
+	downloadLinks = set() #using set to remove duplicate links
 	#Extract all download link in urlList
 	for link in urlList :
 		#find download link with regular expression
 		tempLink = re.findall('[\S]+_download.html', link)
 		if len(tempLink) != 0:
-			temp.append(tempLink[0])
+			downloadLinks.add(tempLink[0])
 	#remove duplicate link 
 	
-	downloadLinks = set(temp)
+	# downloadLinks = set(temp)
 	
 	return downloadLinks
 		
