@@ -2,9 +2,26 @@ from BeautifulSoup import *
 import urllib
 import re
 import os
+import sys
 
 url = raw_input('Enter Chiasenhac album url : ')
 saveDir = raw_input('Enter Save Folder : ')
+
+
+
+def reporthook(blocknum, blocksize, totalsize):
+    readsofar = blocknum * blocksize
+    if totalsize > 0:
+        percent = readsofar * 1e2 / totalsize
+        s = "\r%5.1f%% %*d / %d" % (
+            percent, len(str(totalsize)), readsofar, totalsize)
+        sys.stderr.write(s)
+        if readsofar >= totalsize: # near the end
+            sys.stderr.write("\n")
+    else: # total size is unknown
+        sys.stderr.write("read %d\n" % (readsofar,))
+
+
 
 def GetDownloadLinks(urlList) :
 	# temp = []
@@ -60,10 +77,10 @@ def DownloadFile( link ) :
 	temp = link.split('/')
 	filename = temp[len(temp) - 1]
 	filename = filename.replace('%20', ' ')
-	print 'download ' + saveDir + '/' + filename
+	print 'downloading ' + saveDir + '/' + filename
 	if not os.path.exists(saveDir) :
 		os.makedirs(saveDir)
-	urllib.urlretrieve( link , saveDir + '/' + filename)
+	urllib.urlretrieve( link , saveDir + '/' + filename, reporthook)
 
 def DownloadAlbum( urlList ) :
 	for link in urlList :
