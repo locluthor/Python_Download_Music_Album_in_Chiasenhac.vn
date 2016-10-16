@@ -3,10 +3,25 @@ import urllib
 import re
 import os
 import sys
+import requests
 
 url = raw_input('Enter Chiasenhac album url : ')
 saveDir = raw_input('Enter Save Folder : ')
 
+#temporary hard code username and password
+username = 'loc.luthor' 
+password = 'haydoiday'
+
+
+def LoginChiasenhac(username, password) :
+	#POST 4 pramater to login chiasenhac
+	logindata = {'username':username, 'password':password, 'redirect':'', 'login':'%C4%90%C4%83ng+nh%E1%BA%ADp'}
+	loginSession = requests.Session()
+	loginurl = 'http://chiasenhac.vn/login.php'
+	loginSession.post(loginurl, data = logindata)
+	return loginSession
+
+loginSession  = LoginChiasenhac(username, password)#use this logined sesstion to download high quality music
 
 
 def reporthook(blocknum, blocksize, totalsize):
@@ -40,10 +55,10 @@ def GetDownloadLinks(urlList) :
 		
 
 def GetAllTagInUrl(url, inputTag):
-
+	# loginSession  = LoginChiasenhac(username, password)
 	listUrl = []
-	html = urllib.urlopen(url).read()
-	soup = BeautifulSoup(html)
+	html = loginSession.get(url)
+	soup = BeautifulSoup(html.content)
 	#Retrieve all of the inputTag tags
 	tags = soup(inputTag)
 	for tag in tags:
@@ -52,14 +67,19 @@ def GetAllTagInUrl(url, inputTag):
 	return listUrl
 
 def GetDirectLink(url) :
-	html = urllib.urlopen(url).read()
-	soup = BeautifulSoup(html)
+	# loginSession  = LoginChiasenhac(username, password)
+	html = loginSession.get(url)
+
+	soup = BeautifulSoup(html.content)
 	
 	#download link in place inside javascript tab
 	tags = soup('script')
+	# os.system('pause')
+	# print tags
 	for tag in tags :
 		script = str(tag.string)
-		links = re.findall('href="(http:.*\[MP3 320kbps\].+?)"', script)
+		# print script
+		links = re.findall('href="(http:.*\[FLAC Lossless\].+?)"', script)
 		if len(links) != 0 : 
 			return links[0]
 	#return only first link, because the second link is provide when adblock is turn on	-> not valid
@@ -87,6 +107,9 @@ def DownloadAlbum( urlList ) :
 		DownloadFile(link)
 		
 
+	
+		
+		
 song_urls = GetDownloadLinks( GetAllTagInUrl(url, 'a'))
 albumLink = GetMp3AlbumLink( song_urls )
 DownloadAlbum(albumLink)
