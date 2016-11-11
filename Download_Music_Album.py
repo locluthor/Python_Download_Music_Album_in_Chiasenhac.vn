@@ -5,11 +5,17 @@ import re
 import os
 import sys
 import requests
-import getopt
+from argparse import ArgumentParser 
 
-_url = '' # album url to download
-_format = 'MP3 320kbps' # [m4a, flac, mp3]
-_savedir = 'D:/Music/Download'#save folder
+
+
+parser = ArgumentParser()
+parser.add_argument('url', help='Album Url to download') # positional argument
+# optional arguments with value in range[m4a, flac, mp3] and default is mp3
+parser.add_argument('-f', '--format', help='specify song quality to download', choices=['m4a', 'flac', 'mp3'], default='mp3')
+parser.add_argument('-s', '--savedir', help='Folder store song downloaded', default='C:/Music')
+
+args = parser.parse_args() # parse commandline arguments
 
 def MapTypeToFormat(type) :
 	'''
@@ -20,34 +26,11 @@ def MapTypeToFormat(type) :
 	if type == 'flac' :
 		return 'FLAC Lossless'
 	return 'MP3 320kbps' #default download mp3
-	
 
-def GetArguments(argv) :
-	'''
-	Parse arguments for cmd to variable
-	'''
-	try :
-		#	getopt take 3 arguments 
-		# 	argv : arguments list for cmd
-		#	2nd str : short flag (h : -h, u: must follow by value)
-		#	3rd str : long flag according short flag (-h <--> --help)
-		opts, args = getopt.getopt(argv, "hu:f:s:", ["help", "url=", 'format=', 'savedir='])
-	except getopt.GetoptError :
-		# usage() #todo Unix rule
-		sys.exit(2)
+_url = args.url # album url to download
+_format = MapTypeToFormat(args.format) # [m4a, flac, mp3]
+_savedir = args.savedir #save folder
 
-	for opt, arg in opts :
-		if opt in ("-h", "--help") :	
-			sys.exit()
-		elif opt in ("-u", "--url") :
-			global _url
-			_url = arg
-		elif opt in ('-f', '--format') :
-			global _format
-			_format = MapTypeToFormat(arg)
-		elif opt in ('-s', '--savedir') :
-			global _savedir
-			_savedir = arg
 
 #temporary hard code username and password
 username = 'loc.luthor' 
@@ -87,6 +70,7 @@ def GetDownloadLinks(urlList) :
 		#find download link with regular expression
 		tempLink = re.findall('[\S]+_download.html', link)
 		if len(tempLink) != 0:
+			# print ('templink : ', tempLink[0])
 			downloadLinks.add(tempLink[0])
 	
 	return downloadLinks
@@ -119,7 +103,7 @@ def GetDirectLink(url) :
 		# print script
 		# print ('format : ', _format)
 		links = re.findall(r'href="(http:.*\[' + _format + '\].+?)"', script)
-		if len(links) != 0 : 
+		if len(links) != 0 :
 			return links[0]
 	#return only first link, because the second link is provide when adblock is turn on	-> not valid
 	return ''
@@ -139,7 +123,7 @@ def DownloadFile( link,  saveDir) :
 	print ('downloading ' , saveDir , '/' , filename)
 	if not os.path.exists(saveDir) :
 		os.makedirs(saveDir)
-	urllib.request.urlretrieve( link , saveDir + '/' + filename, reporthook)
+	urllib.request.urlretrieve( link , os.path.join(saveDir, filename), reporthook)
 
 def DownloadAlbum( urlList , _savedir) :
 	for link in urlList :
@@ -148,7 +132,7 @@ def DownloadAlbum( urlList , _savedir) :
 
 if __name__ == '__main__' :
 	
-	GetArguments(sys.argv[1:]) # argv[0] is the name of script itself
+	# GetArguments(sys.argv[1:]) # argv[0] is the name of script itself
 	song_urls = GetDownloadLinks( GetAllTagInUrl(_url, 'a'))
 	albumLink = GetMp3AlbumLink( song_urls )
 	DownloadAlbum(albumLink, _savedir)
